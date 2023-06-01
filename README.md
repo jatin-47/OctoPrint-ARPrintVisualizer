@@ -1,2 +1,17 @@
-# OctoPrint-ARPrintVisualizer
- Helps viualise the print using Augmented Reality from the live camera feed.
+# OctoPrint-Arprintvisualizer
+
+**TODO:** Describe what your plugin does.
+
+## Setup
+
+Install via the bundled [Plugin Manager](https://docs.octoprint.org/en/master/bundledplugins/pluginmanager.html)
+or manually using this URL:
+
+    https://github.com/jatin-47/OctoPrint-Arprintvisualizer/archive/master.zip
+
+**TODO:** Describe how to install your plugin, if more needs to be done than just installing it via pip or through
+the plugin manager.
+
+## Configuration
+
+**TODO:** Describe your plugin's configuration options (if any).
