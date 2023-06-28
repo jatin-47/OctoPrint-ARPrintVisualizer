@@ -2,6 +2,8 @@
 from __future__ import absolute_import
 import threading
 import requests
+import flask
+import cv2
 import octoprint.plugin
 from octoprint.schema.webcam import Webcam, WebcamCompatibility
 from octoprint.webcams import WebcamNotAbleToTakeSnapshotException
@@ -9,6 +11,7 @@ from octoprint.webcams import WebcamNotAbleToTakeSnapshotException
 class ARPrintVisualizerPlugin(octoprint.plugin.SettingsPlugin,
                               octoprint.plugin.TemplatePlugin,
                               octoprint.plugin.AssetPlugin,
+                              octoprint.plugin.BlueprintPlugin,
                               octoprint.plugin.WebcamProviderPlugin):
     
     def __init__(self):
@@ -17,8 +20,8 @@ class ARPrintVisualizerPlugin(octoprint.plugin.SettingsPlugin,
     ##~~ AssetPlugin mixin
     def get_assets(self):
         return {
-            "js": ["js/ARPrintVisualizer.js",
-                   "js/opencv.js"],
+            "js": ["js/ARPrintVisualizer.js"],
+                #    "js/opencv.js"],
             "css": ["css/ARPrintVisualizer.css"],
             "less": ["less/ARPrintVisualizer.less"]
         }
@@ -33,6 +36,34 @@ class ARPrintVisualizerPlugin(octoprint.plugin.SettingsPlugin,
                 "suffix": "_real"
             }
         ]
+    
+    # Generates a video feed from the camera at the given index. stops video feed if its cut off/ cant read frame
+    def generate_feed(self, ip): #, frame_width, frame_height):
+        cap = cv2.VideoCapture(ip)
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+            # frame = cv2.resize(frame, (frame_width, frame_height))
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            ret, buffer = cv2.imencode('.jpg', gray)
+            if not ret:
+                break
+            self._logger.info("yielding frame")
+            yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+        cap.release()
+        
+    ##~~ BlueprintPlugin mixin 
+    @octoprint.plugin.BlueprintPlugin.route("/feed", methods=["GET"])
+    def feed(self):
+        return flask.Response(self.generate_feed(0), mimetype='multipart/x-mixed-replace; boundary=frame')
+    
+    @octoprint.plugin.BlueprintPlugin.route("/cam", methods=["GET"])
+    def ar_cam(self):
+        response = flask.make_response(flask.render_template("cam.jinja2"))
+        return response
+
     ##~~ SettingsPlugin mixin
     def get_settings_version(self):
         return 1
