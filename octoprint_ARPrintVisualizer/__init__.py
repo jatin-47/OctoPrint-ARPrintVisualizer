@@ -1,6 +1,9 @@
 # coding=utf-8
 from __future__ import absolute_import
 import threading
+import subprocess
+import os
+import time
 import requests
 import flask
 import cv2
@@ -8,143 +11,101 @@ import octoprint.plugin
 from octoprint.schema.webcam import Webcam, WebcamCompatibility
 from octoprint.webcams import WebcamNotAbleToTakeSnapshotException
 
-class ARPrintVisualizerPlugin(octoprint.plugin.SettingsPlugin,
+class ARPrintVisualizerPlugin(octoprint.plugin.StartupPlugin,
+                              octoprint.plugin.ShutdownPlugin,
+                              octoprint.plugin.SettingsPlugin,
                               octoprint.plugin.TemplatePlugin,
                               octoprint.plugin.AssetPlugin,
-                              octoprint.plugin.BlueprintPlugin,
-                              octoprint.plugin.WebcamProviderPlugin):
+                            #   octoprint.plugin.BlueprintPlugin,
+                            #   octoprint.plugin.WebcamProviderPlugin
+                              ):
     
     def __init__(self):
-        self._capture_mutex = threading.Lock()
+        # self._capture_mutex = threading.Lock()
+        self._process = None
+        self._cam_server_path = "\OctoCam\\ar_cam.py"
 
-    ##~~ AssetPlugin mixin
-    def get_assets(self):
-        return {
-            "js": ["js/ARPrintVisualizer.js"],
-                #    "js/opencv.js"],
-            "css": ["css/ARPrintVisualizer.css"],
-            "less": ["less/ARPrintVisualizer.less"]
-        }
+    ##########################################################################################################
+
+    ##~~ StartupPlugin mixin
+    def on_startup(self, host, port):
+        """
+        Starts the AR Cam Flask server on octoprint server startup
+        """
+        try:
+            log_file = open("flask_log.txt", "w")            
+            script_abs_path = os.path.dirname(__file__) + self._cam_server_path
+            self._process = subprocess.Popen(["python", script_abs_path], stdout=log_file, stderr=log_file)
+
+            time.sleep(2)
+            if self._process.poll() is None:
+                print("Cam server started successfully.")
+            else:
+                print("Error while starting the Flask server. Check the log file for details.")
+            log_file.close()
+        except Exception as e:
+            self._logger.info("ARPrintVisualizer failed to start")
+            self._logger.info(e)
+        return
+
+    ##~~ ShutdownPlugin mixin
+    def on_shutdown(self):
+        """
+        Stops the AR Cam Flask server on octoprint server shutdown
+        """
+        if self._process is not None and self._process.poll() is None:
+            self._logger.info("Stopping the cam server...")
+            self._process.terminate()
+            self._process.wait()
+    
+    ##########################################################################################################
     
     ##~~ TemplatePlugin mixin
     def get_template_configs(self):
         return [
             {
-                "type": "webcam",
-                "template": "ARPrintVisualizer_webcam.jinja2",
-                "custom_bindings": True,
-                "suffix": "_real"
+                "type": "settings",
+                "template": "ARPrintVisualizer_settings.jinja2",
+                "custom_bindings": True
             }
         ]
     
-    # Generates a video feed from the camera at the given index. stops video feed if its cut off/ cant read frame
-    def generate_feed(self, ip): #, frame_width, frame_height):
-        cap = cv2.VideoCapture(ip)
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-            # frame = cv2.resize(frame, (frame_width, frame_height))
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            ret, buffer = cv2.imencode('.jpg', gray)
-            if not ret:
-                break
-            self._logger.info("yielding frame")
-            yield (b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-        cap.release()
+    ##~~ AssetPlugin mixin
+    def get_assets(self):
+        return {
+            "js": ["js/ARPrintVisualizer.js"],
+            "css": ["css/ARPrintVisualizer.css"],
+            "less": ["less/ARPrintVisualizer.less"]
+        }
+    
+    ##########################################################################################################
+
+    # ##~~ SettingsPlugin mixin
+    # def get_settings_defaults(self):
+    #     """
+    #     Returns the default settings for the plugin
+    #     """
+    #     return dict(
+    #         stream=""
+    #     )
+
+    def on_settings_save(self, data):
+        """
+        If you wanna do something when a particular setting is updated
+        """
+        old_stream=self._settings.get(["stream"])
         
-    ##~~ BlueprintPlugin mixin 
-    @octoprint.plugin.BlueprintPlugin.route("/feed", methods=["GET"])
-    def feed(self):
-        return flask.Response(self.generate_feed(0), mimetype='multipart/x-mixed-replace; boundary=frame')
-    
-    @octoprint.plugin.BlueprintPlugin.route("/cam", methods=["GET"])
-    def ar_cam(self):
-        response = flask.make_response(flask.render_template("cam.jinja2"))
-        return response
-
-    ##~~ SettingsPlugin mixin
-    def get_settings_version(self):
-        return 1
-    
-    def get_settings_defaults(self):
-        return dict(
-            stream="http://172.30.250.143:8081/video.mjpg",
-            snapshot="http://localhost:8888/out.jpg",
-            flipH=True,
-            cacheBuster=True,
-            snapshotSslValidation=True,
-            snapshotTimeout=5
-        )
-
-    ##~~ WebcamProviderPlugin mixin
-    def get_webcam_configurations(self):
-        stream = self._settings.get(["stream"])
-        snapshot = self._settings.get(["snapshot"])
-        flipH = self._settings.get_boolean(["flipH"])
-        cacheBuster = self._settings.get_boolean(["cacheBuster"])
-        snapshotSslValidation = self._settings.get_boolean(["snapshotSslValidation"])
-
-        try:
-            streamTimeout = int(self._settings.get(["streamTimeout"]))
-        except Exception:
-            streamTimeout = 5
-
-        try:
-            snapshotTimeout = int(self._settings.get(["snapshotTimeout"]))
-        except Exception:
-            snapshotTimeout = 5
-
-        return [
-            Webcam(
-                name="ARCam",
-                displayName="AR Webcam",
-                flipH=flipH,
-                snapshotDisplay=snapshot,
-                canSnapshot=self._can_snapshot(),
-                compat=WebcamCompatibility(
-                    stream=stream,
-                    streamTimeout=streamTimeout,
-                    cacheBuster=cacheBuster,
-                    snapshot=snapshot,
-                    snapshotTimeout=snapshotTimeout,
-                    snapshotSslValidation=snapshotSslValidation,
-                ),
-                extras=dict(
-                    stream=stream,
-                    streamTimeout=streamTimeout,
-                    cacheBuster=cacheBuster,
-                ),
-            ),
-        ]
-
-    def _can_snapshot(self):
-        snapshot = self._settings.get(["snapshot"])
-        return snapshot is not None and snapshot.strip() != ""
-
-    def take_webcam_snapshot(self, _):
-        snapshot_url = self._settings.get(["snapshot"])
-        if not self._can_snapshot():
-            raise WebcamNotAbleToTakeSnapshotException("ARCam")
-
-        with self._capture_mutex:
-            self._logger.debug(f"Capturing image from {snapshot_url}")
-            r = requests.get(
-                snapshot_url,
-                stream=True,
-                timeout=self._settings.get_int(["snapshotTimeout"]),
-                verify=self._settings.get_boolean(["snapshotSslValidation"]),
-            )
-            r.raise_for_status()
-            return r.iter_content(chunk_size=1024)
+        octoprint.plugin.SettingsPlugin.on_settings_save(self,data)
+        new_stream=self._settings.get(["stream"])
 
 
     ##~~ Softwareupdate hook
     def get_update_information(self):
-        # Define the configuration for your plugin to use with the Software Update
-        # Plugin here. See https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html
-        # for details.
+        """
+        Define the configuration for your plugin to use with the Software Update
+        Plugin here. See https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html
+        for details.
+        """
         return {
             "ARPrintVisualizer": {
                 "displayName": "ARPrintVisualizer",
@@ -157,7 +118,7 @@ class ARPrintVisualizerPlugin(octoprint.plugin.SettingsPlugin,
                 "current": self._plugin_version,
 
                 # update method: pip
-                "pip": "https://github.com/jatin-47/OctoPrint-ARPrintVisualizer/archive/{target_version}.zip",
+                #"pip": "https://github.com/jatin-47/OctoPrint-ARPrintVisualizer/archive/{target_version}.zip",
             }
         }
 
