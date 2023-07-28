@@ -1,6 +1,8 @@
 # OctoPrint-Arprintvisualizer
 
-**TODO:** Describe what your plugin does.
+This plugin visualizes the gcode in AR.
+
+<img src="https://github.com/jatin-47/OctoPrint-ARPrintVisualizer/blob/subprocess/pic.png" width="800" >
 
 ## Setup
 
@@ -8,9 +10,6 @@ Install via the bundled [Plugin Manager](https://docs.octoprint.org/en/master/bu
 or manually using this URL:
 
     https://github.com/jatin-47/OctoPrint-Arprintvisualizer/archive/master.zip
-
-**TODO:** Describe how to install your plugin, if more needs to be done than just installing it via pip or through
-the plugin manager.
 
 ## Configuration
 
