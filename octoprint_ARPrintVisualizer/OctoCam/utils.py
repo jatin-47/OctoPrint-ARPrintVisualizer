@@ -1,42 +1,84 @@
 from flask import Response
 import numpy as np
+import os
+from octoprint.settings import Settings
 import cv2
 
 def ar(input):
     """
     Returns the augmented input image
     """
-    gray = cv2.cvtColor(input, cv2.COLOR_BGR2GRAY)
-    # aruco_dict_type = ARUCO_DICT["DICT_6X6_250"]
-    # calibration_matrix_path = "calibration_matrix.npy"
-    # distortion_coefficients_path = "distortion_coefficients.npy"
+    octoprint_settings = Settings()
+    plugin_identifier = "ARPrintVisualizer"
+    aruco_type = octoprint_settings.get(["plugins", plugin_identifier, "aruco_type"])
+
+    #the file is in the same directory as this python script
+    #get a varibale with the full path to the file
+    path = os.path.dirname(__file__)
+
+    camera_matrix = np.load(os.path.dirname(__file__) + "\calibration_matrix.npy")
+    dist_coeffs = np.load(os.path.dirname(__file__) + "\distortion_coefficients.npy")
+
+    h, w, _ = input.shape
+    width=800
+    height = int(width*(h/w))
+    frame = cv2.resize(input, (width, height), interpolation=cv2.INTER_CUBIC)
+    img_gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+
+    arucoDict = cv2.aruco.Dictionary_get(ARUCO_DICT[aruco_type])
+    arucoParams = cv2.aruco.DetectorParameters_create()
     
-    # matrix_coefficients = np.load(calibration_matrix_path)
-    # distortion_coefficients = np.load(distortion_coefficients_path)
+    corners, ids, rejected = cv2.aruco.detectMarkers(img_gray, arucoDict, parameters=arucoParams)
+    frame = cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+
+    points = get_rec_points(corners)
+    if points is not None:
+        for point in points:
+            cv2.circle(frame, tuple(point), 4, (0, 0, 255), -1)
+            
+        org_h, org_w = 16.5, 18.5 #in cm
+        points_3D = np.array([[-org_w/2, org_h/2, 0], [org_w/2, org_h/2, 0], [org_w/2, -org_h/2, 0], [-org_w/2, -org_h/2, 0]], dtype="double")
+		
+        points_2D = points.astype('float32')
+        points_3D = points_3D.astype('float32')
+	
+        success, rvecs, tvecs = cv2.solvePnP(points_3D, points_2D, camera_matrix, dist_coeffs)
+		
+        len = 10 #in cm
+        axis = np.float32([[-len/2, -len/2, 0], [-len/2, len/2, 0], [len/2, len/2, 0], [len/2, -len/2, 0],
+							[-len/2, -len/2, len], [-len/2, len/2, len], [len/2, len/2, len],[len/2, -len/2, len]])
+
+        imgpts_2d, jac = cv2.projectPoints(axis, rvecs, tvecs, camera_matrix, dist_coeffs)
+        imgpts_2d = np.int32(imgpts_2d).reshape(-1, 2)
+
+        frame = cv2.drawContours(frame, [imgpts_2d[:4]], -1, (255, 0, 0), 2)
+        for i, j in zip(range(4), range(4, 8)):
+            frame = cv2.line(frame, tuple(imgpts_2d[i]), tuple(imgpts_2d[j]), (0, 255, 10), 2)
+        frame = cv2.drawContours(frame, [imgpts_2d[4:]], -1, (255, 0, 0), 2)
+
+    return frame
+
+def is_valid_camera_ip(camera_ip):
+    try:
+        cap = cv2.VideoCapture(camera_ip)
+        if cap.isOpened():
+            cap.release()
+            return True
+        else:
+            cap.release()
+            return False
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
     
-    # gray = cv2.cvtColor(input, cv2.COLOR_BGR2GRAY)
-    # cv2.aruco_dict = cv2.aruco.Dictionary_get(aruco_dict_type)
-    # parameters = cv2.aruco.DetectorParameters_create()
-
-    # corners, ids, rejected_img_points = cv2.aruco.detectMarkers(gray, cv2.aruco_dict,parameters=parameters)
-
-    # # If markers are detected
-    # if len(corners) > 0:
-    #     for i in range(0, len(ids)):
-    #         # Estimate pose of each marker and return the values rvec and tvec---(different from those of camera coefficients)
-    #         rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(corners[i], 0.02, matrix_coefficients, distortion_coefficients)
-    #         # Draw a square around the markers
-    #         cv2.aruco.drawDetectedMarkers(input, corners) 
-
-    #         # Draw Axis
-    #         cv2.drawFrameAxes(input, matrix_coefficients, distortion_coefficients, rvec, tvec, 0.01)  
-
-    return gray
-
 def generate_feed(camera_ip):
     """
     Generates a video feed from the camera at the given index. stops video feed if its cut off/ cant read frame
     """
+    if not is_valid_camera_ip(camera_ip):
+        print("Invalid camera IP.")
+        return
+    
     cap = cv2.VideoCapture(camera_ip)
     while True:
         ret, frame = cap.read()
@@ -47,13 +89,18 @@ def generate_feed(camera_ip):
         if not ret:
             break
         yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+            b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
     cap.release()
+
 
 def generate_snapshot(camera_ip):
     """
     Generates snapshot from the camera at the given index. if the frame didnt return, return error
     """
+    if not is_valid_camera_ip(camera_ip):
+        print("Invalid camera IP.")
+        return
+    
     cap = cv2.VideoCapture(camera_ip)
     ret, frame = cap.read()
     if not ret:

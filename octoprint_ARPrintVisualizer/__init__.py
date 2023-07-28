@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import threading
 import subprocess
 import os
+import sys
 import time
 import requests
 import flask
@@ -35,7 +36,7 @@ class ARPrintVisualizerPlugin(octoprint.plugin.StartupPlugin,
         try:
             log_file = open("flask_log.txt", "w")            
             script_abs_path = os.path.dirname(__file__) + self._cam_server_path
-            self._process = subprocess.Popen(["python", script_abs_path], stdout=log_file, stderr=log_file)
+            self._process = subprocess.Popen([sys.executable, script_abs_path], stdout=log_file, stderr=log_file)
 
             time.sleep(2)
             if self._process.poll() is None:
@@ -67,6 +68,11 @@ class ARPrintVisualizerPlugin(octoprint.plugin.StartupPlugin,
                 "type": "settings",
                 "template": "ARPrintVisualizer_settings.jinja2",
                 "custom_bindings": True
+            },
+            {
+                "type": "tab",
+                "template": "ARPrintVisualizer_tab.jinja2",
+                "custom_bindings": True
             }
         ]
     
@@ -80,25 +86,19 @@ class ARPrintVisualizerPlugin(octoprint.plugin.StartupPlugin,
     
     ##########################################################################################################
 
-    # ##~~ SettingsPlugin mixin
-    # def get_settings_defaults(self):
-    #     """
-    #     Returns the default settings for the plugin
-    #     """
-    #     return dict(
-    #         stream=""
-    #     )
-
-    def on_settings_save(self, data):
+    ##~~ SettingsPlugin mixin
+    def get_settings_defaults(self):
         """
-        If you wanna do something when a particular setting is updated
+        Returns the initial default settings for the plugin. Can't skip it!
         """
-        old_stream=self._settings.get(["stream"])
-        
-        octoprint.plugin.SettingsPlugin.on_settings_save(self,data)
-        new_stream=self._settings.get(["stream"])
+        return dict(
+            stream="",
+            aruco_dict="DICT_6X6_250",
+        )
 
 
+
+    ##########################################################################################################
     ##~~ Softwareupdate hook
     def get_update_information(self):
         """
@@ -122,7 +122,7 @@ class ARPrintVisualizerPlugin(octoprint.plugin.StartupPlugin,
             }
         }
 
-__plugin_name__ = "ARPrintVisualizer"
+__plugin_name__ = "AR Print Visualizer"
 __plugin_pythoncompat__ = ">=3,<4"  # Only Python 3
 
 def __plugin_load__():

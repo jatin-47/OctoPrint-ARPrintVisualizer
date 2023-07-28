@@ -9,16 +9,11 @@ $(function() {
         var self = this;
 
         self.settingsViewModel = parameters[0];
-        self.cam_url=ko.observable();
-
-        
 
         self.onBeforeBinding = function() {
-            self.cam_url(self.settingsViewModel.settings.plugins.ARPrintVisualizer.stream());
         }
 
         self.onEventSettingsUpdated = function(payload) {
-            self.cam_url(self.settingsViewModel.settings.plugins.ARPrintVisualizer.stream());
         }
               
            
@@ -28,6 +23,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push({
         construct: ArprintvisualizerViewModel,
         dependencies: [ "settingsViewModel"],
-        elements: [ "#settings_plugin_ARPrintVisualizer"]
+        elements: [ "#settings_plugin_ARPrintVisualizer", "#tab_plugin_ARPrintVisualizer"]
     });
 });

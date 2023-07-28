@@ -18,4 +18,5 @@ def snapshot(cam_url):
     return next(generate_snapshot(cam_url))
     
 if __name__ == "__main__":
-    app.run()
+    app.run(host='', port=27100)
+    

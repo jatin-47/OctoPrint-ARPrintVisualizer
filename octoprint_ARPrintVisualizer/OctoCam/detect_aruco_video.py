@@ -53,7 +53,7 @@ while True:
 	img_gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
 	corners, ids, rejected = cv2.aruco.detectMarkers(img_gray, arucoDict, parameters=arucoParams)
-	detected_markers = cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+	frame = cv2.aruco.drawDetectedMarkers(frame, corners, ids)
 
 	points = get_rec_points(corners)
 	if points is not None:
@@ -89,7 +89,7 @@ while True:
 		warped = cv2.warpPerspective(frame, M, (width, height))
 
 		cv2.imshow("Warped", warped)
-	cv2.imshow("Image", detected_markers)
+	cv2.imshow("Image", frame)
 
 	key = cv2.waitKey(1) & 0xFF
 	if key == ord("q"):

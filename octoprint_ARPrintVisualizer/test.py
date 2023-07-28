@@ -1,3 +1,5 @@
-import cv2
+from octoprint.settings import Settings
 
-video = cv2.VideoCapture("http://172.30.108.104:8081/video.mjpg")
+# Get the OctoPrint settings dictionary
+octoprint_settings = Settings()
+print(octoprint_settings.get(["plugins", "ARPrintVisualizer", "aruco_type"]))
