@@ -1,16 +1,12 @@
 # coding=utf-8
 from __future__ import absolute_import
-import threading
 import subprocess
 import os
 import sys
 import time
-import requests
-import flask
-import cv2
 import octoprint.plugin
-from octoprint.schema.webcam import Webcam, WebcamCompatibility
-from octoprint.webcams import WebcamNotAbleToTakeSnapshotException
+# from octoprint.schema.webcam import Webcam, WebcamCompatibility
+# from octoprint.webcams import WebcamNotAbleToTakeSnapshotException
 
 class ARPrintVisualizerPlugin(octoprint.plugin.StartupPlugin,
                               octoprint.plugin.ShutdownPlugin,

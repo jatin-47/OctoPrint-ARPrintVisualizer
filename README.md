@@ -2,7 +2,7 @@
 
 This plugin visualizes the gcode in AR.
 
-<img src="https://github.com/jatin-47/OctoPrint-ARPrintVisualizer/blob/subprocess/pic.png" width="800" >
+<img src="https://github.com/jatin-47/OctoPrint-ARPrintVisualizer/blob/main/pic.png" width="800" >
 
 ## Setup
 

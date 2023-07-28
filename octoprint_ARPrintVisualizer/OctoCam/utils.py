@@ -12,10 +12,6 @@ def ar(input):
     plugin_identifier = "ARPrintVisualizer"
     aruco_type = octoprint_settings.get(["plugins", plugin_identifier, "aruco_type"])
 
-    #the file is in the same directory as this python script
-    #get a varibale with the full path to the file
-    path = os.path.dirname(__file__)
-
     camera_matrix = np.load(os.path.dirname(__file__) + "\calibration_matrix.npy")
     dist_coeffs = np.load(os.path.dirname(__file__) + "\distortion_coefficients.npy")
 
