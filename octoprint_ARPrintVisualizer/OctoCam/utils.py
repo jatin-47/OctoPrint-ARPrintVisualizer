@@ -73,7 +73,10 @@ def generate_feed(camera_ip):
     """
     if not is_valid_camera_ip(camera_ip):
         print("Invalid camera IP.")
-        return
+        frame = cv2.imread(os.path.dirname(__file__) + "\error.jpg")
+        ret, buffer = cv2.imencode('.jpg', frame)
+        yield (b'--frame\r\n'
+            b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
     
     cap = cv2.VideoCapture(camera_ip)
     while True:
@@ -95,7 +98,9 @@ def generate_snapshot(camera_ip):
     """
     if not is_valid_camera_ip(camera_ip):
         print("Invalid camera IP.")
-        return
+        frame = cv2.imread(os.path.dirname(__file__) + "\error.jpg")
+        ret, buffer = cv2.imencode('.jpg', frame)
+        yield Response(buffer.tobytes(), mimetype='image/jpeg')
     
     cap = cv2.VideoCapture(camera_ip)
     ret, frame = cap.read()

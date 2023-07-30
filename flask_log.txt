@@ -1,0 +1,22 @@
+ * Serving Flask app 'ar_cam'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:27100
+Press CTRL+C to quit
+[ERROR:0@40.604] global D:\a\opencv-python\opencv-python\opencv\modules\videoio\src\cap.cpp (166) cv::VideoCapture::open VIDEOIO(CV_IMAGES): raised OpenCV exception:
+
+OpenCV(4.6.0) D:\a\opencv-python\opencv-python\opencv\modules\videoio\src\cap_images.cpp:253: error: (-5:Bad argument) CAP_IMAGES: can't find starting number (in the name of file): http://172.30.250.143:8081/video.mjpg in function 'cv::icvExtractPattern'
+
+
+127.0.0.1 - - [30/Jul/2023 15:15:43] "GET /stream/http://172.30.250.143:8081/video.mjpg HTTP/1.1" 200 -
+[ERROR:0@52.821] global D:\a\opencv-python\opencv-python\opencv\modules\videoio\src\cap.cpp (166) cv::VideoCapture::open VIDEOIO(CV_IMAGES): raised OpenCV exception:
+
+OpenCV(4.6.0) D:\a\opencv-python\opencv-python\opencv\modules\videoio\src\cap_images.cpp:253: error: (-5:Bad argument) CAP_IMAGES: can't find starting number (in the name of file): http://172.30.250.143:8081/video.mjpg in function 'cv::icvExtractPattern'
+
+
+[ERROR:1@119.799] global D:\a\opencv-python\opencv-python\opencv\modules\videoio\src\cap.cpp (166) cv::VideoCapture::open VIDEOIO(CV_IMAGES): raised OpenCV exception:
+
+OpenCV(4.6.0) D:\a\opencv-python\opencv-python\opencv\modules\videoio\src\cap_images.cpp:253: error: (-5:Bad argument) CAP_IMAGES: can't find starting number (in the name of file): http://172.30.250.143:8081/video.mjpg in function 'cv::icvExtractPattern'
+
+
+127.0.0.1 - - [30/Jul/2023 15:17:02] "GET /snapshot/http://172.30.250.143:8081/video.mjpg HTTP/1.1" 200 -
