@@ -8,8 +8,6 @@ import flask
 import threading
 import subprocess
 import octoprint.plugin
-# from octoprint.schema.webcam import Webcam, WebcamCompatibility
-# from octoprint.webcams import WebcamNotAbleToTakeSnapshotException
 
 class ARPrintVisualizerPlugin(octoprint.plugin.StartupPlugin,
                               octoprint.plugin.ShutdownPlugin,
@@ -20,11 +18,10 @@ class ARPrintVisualizerPlugin(octoprint.plugin.StartupPlugin,
                               ):
     
     def __init__(self):
-        # self._capture_mutex = threading.Lock()
         self._process = None
         self._thread = None
         self._thread_stop = threading.Event()
-        self._cam_server_path = "\OctoCam\\ar_cam.py"
+        self._cam_server_path = "\OctoAR\\ar_cam.py"
 
     ##########################################################################################################
 
@@ -125,6 +122,22 @@ class ARPrintVisualizerPlugin(octoprint.plugin.StartupPlugin,
             self._thread.join()
 
         return flask.jsonify("Evaluation stopped!") 
+    
+    @octoprint.plugin.BlueprintPlugin.route("/correct", methods=["GET"])
+    def correct_print(self):
+        """
+        Corrects the print by inserting a patch
+        """
+        self._logger.info("Correcting the print...")
+        #get the current x,y,z position of the print head
+        data = self._printer.get_current_data()
+        self._logger.info(data)
+
+
+
+
+        self._printer.resume_print()
+        return flask.jsonify("Print corrected!")
 
     ##########################################################################################################
     
@@ -156,6 +169,9 @@ class ARPrintVisualizerPlugin(octoprint.plugin.StartupPlugin,
         """
         Runs the error detection algorithm on the image
         """
+
+
+
         return True
 
 

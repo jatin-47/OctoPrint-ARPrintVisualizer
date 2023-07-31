@@ -48,7 +48,43 @@ $(function() {
                 });
             }
         }
-        
+
+        self.resume = function() {
+            self.isErrorDetected(false);
+            $.ajax({
+                url: API_BASEURL + "/job",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify({
+                    command: "pause",
+                    action: "resume"
+                }),
+                success: function(data) {
+                    console.log(data);
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+        }
+
+        self.patchResume = function() {
+            $.ajax({
+                url: "/plugin/ARPrintVisualizer/correct",
+                type: "GET",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function(data) {
+                    console.log(data);
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+            self.isErrorDetected(false);            
+        }
+
         self.onDataUpdaterPluginMessage = function(plugin, data) {
             if (plugin != "ARPrintVisualizer") {
                 return;
@@ -67,9 +103,7 @@ $(function() {
                 self.isErrorDetected(true);
             }
 
-        }
-              
-           
+        }           
     }
         
   

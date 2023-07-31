@@ -11,6 +11,8 @@ def ar(input):
     octoprint_settings = Settings()
     plugin_identifier = "ARPrintVisualizer"
     aruco_type = octoprint_settings.get(["plugins", plugin_identifier, "aruco_type"])
+    if aruco_type is None:
+        aruco_type = "DICT_6X6_250"
 
     camera_matrix = np.load(os.path.dirname(__file__) + "\calibration_matrix.npy")
     dist_coeffs = np.load(os.path.dirname(__file__) + "\distortion_coefficients.npy")
