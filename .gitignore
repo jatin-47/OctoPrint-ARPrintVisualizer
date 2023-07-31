@@ -12,3 +12,5 @@ build/
 dist/
 venv/
 app.spec/
+flask.log.txt
+snapshot.jpg
