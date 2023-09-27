@@ -12,5 +12,5 @@ build/
 dist/
 venv/
 app.spec/
-flask.log.txt
+flask_log.txt
 snapshot.jpg
