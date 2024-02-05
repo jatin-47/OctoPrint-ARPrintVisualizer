@@ -33,7 +33,13 @@ plugin_url = "https://github.com/jatin-47/OctoPrint-ARPrintVisualizer"
 plugin_license = "AGPLv3"
 
 # Any additional requirements besides OctoPrint should be listed here
-plugin_requires = []
+plugin_requires = [
+    "Flask==2.2.5",
+    "numpy==1.26.0",
+    "Requests==2.31.0",
+    "setuptools==68.1.2",
+    "opencv-contrib-python==4.6.0.66"
+]
 
 ### --------------------------------------------------------------------------------------------------------------------
 ### More advanced options that you usually shouldn't have to touch follow after this point

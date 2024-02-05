@@ -12,5 +12,6 @@ build/
 dist/
 venv/
 app.spec/
+.vscode
 flask_log.txt
 snapshot.jpg
